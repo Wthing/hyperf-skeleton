@@ -14,6 +14,9 @@ use Hyperf\HttpServer\Router\Router;
 Router::addRoute(['GET', 'POST', 'HEAD'], '/', 'App\Controller\IndexController@index');
 Router::addRoute(['GET', 'POST', 'HEAD'], '/upload', 'App\Controller\IndexController@uploadFile');
 Router::addRoute(['GET', 'POST', 'HEAD'], '/test', 'App\Controller\IndexController@test');
+Router::addRoute(['GET', 'POST', 'HEAD'], '/sign', 'App\Controller\IndexController@sign');
+// Router::post('/api/sign', 'App\Controller\IndexController@sign');
+
 
 Router::get('/favicon.ico', function () {
     return '';
