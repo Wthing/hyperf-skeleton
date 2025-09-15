@@ -21,28 +21,6 @@ class IndexController
         return (string)$id;
     }
 
-
-    public function uploadFile(RequestInterface $request)
-    {
-        if (! $request->hasFile('document')) {
-            return $response->json(['error' => 'Файл не загружен']);
-        }
-
-        $file = $request->file('document');
-
-        if (!$file->isValid()) {
-            return $response->json(['error' => 'Ошибка загрузки']);
-        }
-
-        $fileContent = file_get_contents($file->getPathname());
-        $fileAsBase64 = base64_encode($fileContent);
-
-        $xml = new \SimpleXMLElement("<?xml version='1.0' standalone='yes'?><data></data>");
-        $xml->addChild('document', $fileAsBase64);
-
-        return $xml->asXML();
-    }
-
     public function test(RequestInterface $request, ResponseInterface $response)
     {
         $savePath = BASE_PATH . '/runtime/tmp';
@@ -93,52 +71,6 @@ class IndexController
         KalkanCrypt_Finalize();
 
         return $response->download($sigPath, $sigFileName);
-    }
-
-
-    public function signFile(RequestInterface $request)
-    {        
-        $signData = $request->input('signData');
-
-        $sigFileName = 'signature_' . '_' . time() . '.sig';
-        $savePath = BASE_PATH . '/runtime/tmp';
-        $certificate = BASE_PATH . '/utils/GOST512_fe3c3d8372520e7f91a6a69052eb8188225ac3f5.p12';
-        $certificate = BASE_PATH . '/utils/kalkanFlags&constants.php';
-        $password = env('EDS_PASS');
-
-        KalkanCrypt_Init();
-        KalkanCrypt_TSASetURL("http://tsp.pki.gov.kz");
-        $alias = "";
-        $storage = $KCST_PKCS12;
-        $err = KalkanCrypt_LoadKeyStore($storage, $password,$certificate,$alias);
-
-        $outSign = "";
-        $inData = $pdf;
-        $flags_sign = $KC_SIGN_CMS + $KC_IN_FILE + $KC_OUT_BASE64 + $KC_WITH_TIMESTAMP;
-        $err = KalkanCrypt_SignData("", $flags_sign, $inData, $outSign);
-
-        if ($err > 0){
-            file_put_contents($fileErr,KalkanCrypt_GetLastErrorString());
-            $err_sign = 1;
-        }
-        $data = base64_decode($outSign);
-
-        file_put_contents($pdf,$data);
-
-        KalkanCrypt_Finalize();
-        
-
-        if (!is_dir($savePath)) {
-            mkdir($savePath, 0777, true);
-        }
-
-        $fullPath = $savePath . '/' . $sigFileName;
-
-        file_put_contents($fullPath, $signData);
-
-        return $response->withHeader('Content-Type', 'application/octet-stream')
-        ->withHeader('Content-Disposition', "attachment; filename=\"{$sigFileName}\"")
-        ->withBody(new \Hyperf\HttpMessage\Stream\SwooleStream(file_get_contents($fullPath)));
     }
 
     public function sign(RequestInterface $request, ResponseInterface $response)
@@ -256,6 +188,47 @@ class IndexController
             ->withHeader('Content-Type', 'application/xml; charset=utf-8')
             ->withHeader('Content-Disposition', 'inline; filename="signed.xml"')
             ->withBody(new SwooleStream($xmlString));
+    }
+
+    public function signAsPerson(RequestInterface $request, ResponseInterface $response) {
+        $signData = $request->input('signData', 1);
+        $signedDoc = $request->input('document', 'a');
+        $savePath = BASE_PATH . '/runtime/tmp';
+        if (!is_dir($savePath)) {
+            mkdir($savePath, 0777, true);
+        }
+
+        $certXml = simplexml_load_string($signData);
+        if ($certXml === false) {
+            throw new \RuntimeException('Ошибка разбора XML-подписи');
+        }
+        
+        $certXml->registerXPathNamespace('ds', 'http://www.w3.org/2000/09/xmldsig#');
+        $certData = $certXml->xpath('//ds:X509Certificate');
+        if (empty($certData[0])) {
+            throw new \RuntimeException('Не удалось извлечь сертификат из подписи');
+        }
+
+        $certRaw = base64_decode((string)$certData[0]);
+        $pem = "-----BEGIN CERTIFICATE-----\n" . chunk_split(base64_encode($certRaw), 64, "\n") . "-----END CERTIFICATE-----\n";
+        $x509 = openssl_x509_parse($pem);
+        if (!$x509) {
+            throw new \RuntimeException('Ошибка парсинга X.509 PEM сертификата');
+        }
+
+        $subject = $x509['subject']['CN'] ?? null;
+        $serialRaw = $x509['subject']['serialNumber'] ?? null;
+        if (!$serialRaw || !preg_match('/^IIN(\d{12})$/', $serialRaw, $matches)) {
+            throw new \RuntimeException('Некорректный или отсутствующий ИИН');
+        }
+
+        $iin = $matches[1];
+
+        $sigFileName = $sigFileName = 'signature_' . $iin . '_' . time() . '.sig';
+        $sigPath = $savePath . '/' . $sigFileName;
+        file_put_contents($sigPath, $signData);
+
+        return $response->download($sigPath, $sigFileName);
     }
 
     /**

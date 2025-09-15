@@ -15,8 +15,7 @@ Router::addRoute(['GET', 'POST', 'HEAD'], '/', 'App\Controller\IndexController@i
 Router::addRoute(['GET', 'POST', 'HEAD'], '/upload', 'App\Controller\IndexController@uploadFile');
 Router::addRoute(['GET', 'POST', 'HEAD'], '/test', 'App\Controller\IndexController@test');
 Router::addRoute(['GET', 'POST', 'HEAD'], '/sign', 'App\Controller\IndexController@sign');
-// Router::post('/api/sign', 'App\Controller\IndexController@sign');
-
+Router::addRoute(['GET', 'POST', 'HEAD'], '/sign-personal', 'App\Controller\IndexController@signAsPerson');
 
 Router::get('/favicon.ico', function () {
     return '';
