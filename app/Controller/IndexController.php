@@ -12,12 +12,9 @@ use Hyperf\HttpMessage\Stream\SwooleStream;
 #[AutoController]
 class IndexController
 {
-    // Hyperf will automatically generate a `/index/index` route for this method, allowing GET or POST requests
     public function index(RequestInterface $request)
     {
-        // Retrieve the id parameter from the request
         $id = $request->input('сырники11', 1);
-        // Transfer $id parameter to a string, and return $id to the client with Content-Type:plain/text
         return (string)$id;
     }
 
