@@ -121,11 +121,12 @@ class IndexController
         }
 
         // Подключаем константы KalkanCrypt, если они лежат в отдельном файле
-        $flagsFile = BASE_PATH . '/utils/kalkanFlags&constants.php';
+        $flagsFile = BASE_PATH . '/utils/kalkan_flags_constants.php';
         if (file_exists($flagsFile)) {
             require_once $flagsFile;
         } else {
             // Если нет — продолжим, но константы должны быть где-то определены
+            return $this->xmlError($response, 'Файл с константами KalkanCrypt не найден', 500);
         }
 
         // Инициализация
@@ -140,7 +141,7 @@ class IndexController
 
         // Загрузка контейнера (KCST_PKCS12 — константа из константного файла)
         $alias = "";
-        $storage = $KCST_PKCS12;
+        $storage = KCST_PKCS12;
         $err = KalkanCrypt_LoadKeyStore($storage, $password, $containerPath, $alias);
         if ($err > 0) {
             $errStr = function_exists('KalkanCrypt_GetLastErrorString') ? KalkanCrypt_GetLastErrorString() : "ErrCode={$err}";
@@ -152,7 +153,11 @@ class IndexController
         // 4) Подписание
         $outSign = "";
         // Входные данные — путь к файлу (строка) и соответствующие флаги
-        $flags_sign = $KC_SIGN_CMS + $KC_IN_FILE + $KC_OUT_BASE64 + $KC_WITH_TIMESTAMP;
+        $flags_sign = 
+        KC_SIGN_CMS
+        | KC_IN_FILE
+        | KC_OUT_BASE64
+        | KC_WITH_TIMESTAMP;
 
         try {
             $err = KalkanCrypt_SignData("", $flags_sign, $tmpPath, $outSign);

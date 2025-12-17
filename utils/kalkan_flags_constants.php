@@ -1,0 +1,148 @@
+<?php
+        // $KCST_PKCS12 = 0x1;
+        // $KCST_KZIDCARD = 0x2;
+        // $KCST_KAZTOKEN = 0x4;
+        // $KCST_ETOKEN72K  = 0x8;
+        // $KCST_JACARTA  = 0x10;
+        // $KCST_X509CERT = 0x20;
+        // $KCST_AKEY = 0x40;
+
+
+        // $KC_CERT_CA = 0x201;
+        // $KC_CERT_INTERMEDIATE = 0x202;
+        // $KC_CERT_USER = 0x204;
+
+
+        // $KC_CERT_DER  = 0x101;
+        // $KC_CERT_PEM  = 0x102;
+        // $KC_CERT_B64  = 0x104;
+
+
+        // $KC_USE_NOTHING = 0x401;
+        // $KC_USE_CRL = 0x402;
+        // $KC_USE_OCSP  = 0x404;
+
+        // $KC_CERTPROP_ISSUER_COUNTRYNAME = 0x801;
+        // $KC_CERTPROP_ISSUER_SOPN  = 0x802;
+        // $KC_CERTPROP_ISSUER_LOCALITYNAME  = 0x803;
+        // $KC_CERTPROP_ISSUER_ORG_NAME  = 0x804;
+        // $KC_CERTPROP_ISSUER_ORGUNIT_NAME  = 0x805;
+        // $KC_CERTPROP_ISSUER_COMMONNAME  = 0x806;
+        // $KC_CERTPROP_SUBJECT_COUNTRYNAME  = 0x807;
+        // $KC_CERTPROP_SUBJECT_SOPN = 0x808;
+        // $KC_CERTPROP_SUBJECT_LOCALITYNAME = 0x809;
+        // $KC_CERTPROP_SUBJECT_COMMONNAME = 0x80a;
+        // $KC_CERTPROP_SUBJECT_GIVENNAME  = 0x80b;
+        // $KC_CERTPROP_SUBJECT_SURNAME  = 0x80c;
+        // $KC_CERTPROP_SUBJECT_SERIALNUMBER = 0x80d;
+        // $KC_CERTPROP_SUBJECT_EMAIL  = 0x80e;
+        // $KC_CERTPROP_SUBJECT_ORG_NAME = 0x80f;
+        // $KC_CERTPROP_SUBJECT_ORGUNIT_NAME = 0x810;
+        // $KC_CERTPROP_SUBJECT_BC = 0x811;
+        // $KC_CERTPROP_SUBJECT_DC = 0x812;
+        // $KC_CERTPROP_NOTBEFORE  = 0x813;
+        // $KC_CERTPROP_NOTAFTER = 0x814;
+        // $KC_CERTPROP_KEY_USAGE  = 0x815;
+        // $KC_CERTPROP_EXT_KEY_USAGE  = 0x816;
+        // $KC_CERTPROP_AUTH_KEY_ID  = 0x817; 
+        // $KC_CERTPROP_SUBJ_KEY_ID  = 0x818;
+        // $KC_CERTPROP_CERT_SN  = 0x819;
+        // $KC_CERTPROP_ISSUER_DN  = 0x81a;
+        // $KC_CERTPROP_SUBJECT_DN = 0x81b;
+        // $KC_CERTPROP_SIGNATURE_ALG  = 0x81c;
+
+
+        // $KC_SIGN_DRAFT  = 0x1;
+        // $KC_SIGN_CMS  = 0x2;
+        // $KC_IN_PEM  = 0x4;
+        // $KC_IN_DER  = 0x8;
+        // $KC_IN_BASE64 = 0x10;
+        // $KC_IN2_BASE64  = 0x20;
+        // $KC_DETACHED_DATA = 0x40;
+        // $KC_WITH_CERT = 0x80;
+        // $KC_WITH_TIMESTAMP  = 0x100;
+        // $KC_OUT_PEM = 0x200;
+        // $KC_OUT_DER = 0x400;
+        // $KC_OUT_BASE64  = 0x800;
+        // $KC_IN_FILE = 0x8000;
+        // $KC_NOCHECKCERTTIME = 0x10000;
+        // $KC_HASH_SHA256 = 0x20000;
+        // $KC_HASH_GOST95 = 0x40000;
+        // $KC_GET_OCSP_RESPONSE = 0x80000;
+
+        // $KC_PROXY_OFF = 0x00001000;
+        // $KC_PROXY_ON = 0x00002000;
+        // $KC_PROXY_AUTH = 0x00004000;
+
+
+        declare(strict_types=1);
+
+        define('KCST_PKCS12', 0x1);
+        define('$KCST_KZIDCARD', 0x2);
+        define('KCST_KAZTOKEN', 0x4);
+        define('KCST_ETOKEN72K', 0x8);
+        define('KCST_JACARTA', 0x10);
+        define('KCST_X509CERT', 0x20);
+        define('KCST_AKEY', 0x40);
+
+        define('KC_CERT_CA', 0x201);
+        define('KC_CERT_INTERMEDIATE', 0x202);
+        define('KC_CERT_USER', 0x204);
+
+        define('KC_CERT_DER', 0x101);
+        define('KC_CERT_PEM', 0x102);
+        define('KC_CERT_B64', 0x104);
+
+        define('KC_USE_NOTHING', 0x401);
+        define('KC_USE_CRL', 0x402);
+        define('KC_USE_OCSP', 0x404);
+
+        define('KC_CERTPROP_ISSUER_COUNTRYNAME', 0x801);
+        define('KC_CERTPROP_ISSUER_SOPN', 0x802);
+        define('KC_CERTPROP_ISSUER_LOCALITYNAME', 0x803);
+        define('KC_CERTPROP_ISSUER_ORG_NAME', 0x804);
+        define('KC_CERTPROP_ISSUER_ORGUNIT_NAME', 0x805);
+        define('KC_CERTPROP_ISSUER_COMMONNAME', 0x806);
+        define('KC_CERTPROP_SUBJECT_COUNTRYNAME', 0x807);
+        define('KC_CERTPROP_SUBJECT_SOPN', 0x808);
+        define('KC_CERTPROP_SUBJECT_LOCALITYNAME', 0x809);
+        define('KC_CERTPROP_SUBJECT_COMMONNAME', 0x80a);
+        define('KC_CERTPROP_SUBJECT_GIVENNAME', 0x80b);
+        define('KC_CERTPROP_SUBJECT_SURNAME', 0x80c);
+        define('KC_CERTPROP_SUBJECT_SERIALNUMBER', 0x80d);
+        define('KC_CERTPROP_SUBJECT_EMAIL', 0x80e);
+        define('KC_CERTPROP_SUBJECT_ORG_NAME', 0x80f);
+        define('KC_CERTPROP_SUBJECT_ORGUNIT_NAME', 0x810);
+        define('KC_CERTPROP_SUBJECT_BC', 0x811);
+        define('KC_CERTPROP_SUBJECT_DC', 0x812);
+        define('KC_CERTPROP_NOTBEFORE', 0x813);
+        define('KC_CERTPROP_NOTAFTER', 0x814);
+        define('KC_CERTPROP_KEY_USAGE', 0x815);
+        define('KC_CERTPROP_EXT_KEY_USAGE', 0x816);
+        define('KC_CERTPROP_AUTH_KEY_ID', 0x817); 
+        define('KC_CERTPROP_SUBJ_KEY_ID', 0x818);
+        define('KC_CERTPROP_CERT_SN', 0x819);
+        define('KC_CERTPROP_ISSUER_DN', 0x81a);
+        define('KC_CERTPROP_SUBJECT_DN', 0x81b);
+
+        define('KC_SIGN_DRAFT', 0x1);
+        define('KC_SIGN_CMS', 0x2);
+        define('KC_IN_PEM', 0x4);
+        define('KC_IN_DER', 0x8);
+        define('KC_IN_BASE64', 0x10);
+        define('KC_IN2_BASE64', 0x20);
+        define('KC_DETACHED_DATA', 0x40);
+        define('KC_WITH_CERT', 0x80);
+        define('KC_WITH_TIMESTAMP', 0x100);
+        define('KC_OUT_PEM', 0x200);
+        define('KC_OUT_DER', 0x400);
+        define('KC_OUT_BASE64', 0x800);
+        define('KC_IN_FILE', 0x8000);
+        define('KC_NOCHECKCERTTIME', 0x10000);
+        define('KC_HASH_SHA256', 0x20000);
+        define('KC_HASH_GOST95', 0x40000);
+        define('KC_GET_OCSP_RESPONSE', 0x80000);
+
+        define('KC_PROXY_OFF', 0x00001000);
+        define('KC_PROXY_ON', 0x00002000);
+        define('KC_PROXY_AUTH', 0x00004000);
