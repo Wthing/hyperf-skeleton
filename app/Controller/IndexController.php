@@ -40,6 +40,7 @@ class IndexController
         }
 
         $certificate = BASE_PATH . '/utils/' . \Hyperf\Support\env('EDS_NAME');
+        include BASE_PATH . '/utils/kalkan_flags_constants.php';
         $password = \Hyperf\Support\env('EDS_PASS');
 
         KalkanCrypt_Init();
@@ -75,6 +76,12 @@ class IndexController
 
     public function sign(RequestInterface $request, ResponseInterface $response)
     {
+
+        $savePath = BASE_PATH . '/runtime/tmp';
+        if (!is_dir($savePath)) {
+            mkdir($savePath, 0777, true);
+        }
+
         // 1) Проверки входа
         if (! $request->hasFile('document')) {
             return $this->xmlError($response, 'Файл не загружен', 400);
@@ -123,10 +130,9 @@ class IndexController
         // Подключаем константы KalkanCrypt, если они лежат в отдельном файле
         $flagsFile = BASE_PATH . '/utils/kalkan_flags_constants.php';
         if (file_exists($flagsFile)) {
-            require_once $flagsFile;
+            require $flagsFile;
         } else {
             // Если нет — продолжим, но константы должны быть где-то определены
-            return $this->xmlError($response, 'Файл с константами KalkanCrypt не найден', 500);
         }
 
         // Инициализация
@@ -141,7 +147,7 @@ class IndexController
 
         // Загрузка контейнера (KCST_PKCS12 — константа из константного файла)
         $alias = "";
-        $storage = KCST_PKCS12;
+        $storage = $KCST_PKCS12;
         $err = KalkanCrypt_LoadKeyStore($storage, $password, $containerPath, $alias);
         if ($err > 0) {
             $errStr = function_exists('KalkanCrypt_GetLastErrorString') ? KalkanCrypt_GetLastErrorString() : "ErrCode={$err}";
@@ -153,11 +159,7 @@ class IndexController
         // 4) Подписание
         $outSign = "";
         // Входные данные — путь к файлу (строка) и соответствующие флаги
-        $flags_sign = 
-        KC_SIGN_CMS
-        | KC_IN_FILE
-        | KC_OUT_BASE64
-        | KC_WITH_TIMESTAMP;
+        $flags_sign = $KC_SIGN_CMS + $KC_IN_FILE + $KC_OUT_BASE64 + $KC_WITH_TIMESTAMP;
 
         try {
             $err = KalkanCrypt_SignData("", $flags_sign, $tmpPath, $outSign);
@@ -168,31 +170,21 @@ class IndexController
         }
 
         if ($err > 0) {
-            $errStr = function_exists('KalkanCrypt_GetLastErrorString') ? KalkanCrypt_GetLastErrorString() : "ErrCode={$err}";
+            $fileErr = $savePath . '/error_log.txt';
+            file_put_contents($fileErr, KalkanCrypt_GetLastErrorString());
             KalkanCrypt_Finalize();
-            @unlink($tmpPath);
-            return $this->xmlError($response, 'Ошибка при подписи: ' . $errStr, 500);
+            return $response->json(['error' => 'Ошибка при подписании']);
         }
 
-        // outSign содержит подпись в base64 (если KC_OUT_BASE64 включён)
-        // 5) Собираем XML-ответ
-        $xml = new \SimpleXMLElement("<?xml version='1.0' encoding='UTF-8'?><data></data>");
-        // оригинальный файл в base64 (если нужно)
-        $orig = base64_encode(file_get_contents($tmpPath));
-        $xml->addChild('document', $outSign);
+        $sigFileName = pathinfo($file->getClientFilename(), PATHINFO_FILENAME) . '_signed.pdf';
+        $sigPath = $savePath . '/' . $sigFileName;
 
-        // Очистка
+        $data = base64_decode($outSign);
+        file_put_contents($sigPath, $data);
+
         KalkanCrypt_Finalize();
-        // можно удалить временный файл, если не нужен
-        @unlink($tmpPath);
 
-        $xmlString = $xml->asXML();
-
-        // Возвращаем XML как application/xml
-        return $response
-            ->withHeader('Content-Type', 'application/xml; charset=utf-8')
-            ->withHeader('Content-Disposition', 'inline; filename="signed.xml"')
-            ->withBody(new SwooleStream($xmlString));
+        return $response->download($sigPath, $sigFileName);
     }
 
     public function signAsPerson(RequestInterface $request, ResponseInterface $response) {
