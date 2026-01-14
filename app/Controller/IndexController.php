@@ -188,74 +188,86 @@ class IndexController
     }
 
 
-    public function signTest(RequestInterface $request, ResponseInterface $response)
+   public function signer(RequestInterface $request, ResponseInterface $response)
 {
-    $s3Key = $request->input('s3_key'); // ключ файла на S3
-    if (!$s3Key) {
-        return $this->xmlError($response, 'Не задан ключ S3 файла', 400);
+    $savePath = BASE_PATH . '/runtime/tmp';
+    if (!is_dir($savePath)) {
+        mkdir($savePath, 0777, true);
     }
 
-    // Папка для временных файлов
-    $saveDir = BASE_PATH . '/runtime/tmp';
-    if (!is_dir($saveDir)) {
-        mkdir($saveDir, 0777, true);
+    // 1. Получаем абсолютный путь
+    $filePath = $request->input('file_path');
+    if (!$filePath) {
+        return $this->xmlError($response, 'Балееееен', 400);
     }
 
-    $fileName = basename($s3Key);
-    $localPath = $saveDir . '/' . $fileName;
-
-    // 1) Скачиваем файл с S3
-    try {
-        $s3 = new Aws\S3\S3Client([
-            'version' => 'latest',
-            'endpoint' => getenv('AWS_ENDPOINT'),
-            'credentials' => [
-                'key'    => getenv('AWS_KEY'),
-                'secret' => getenv('AWS_SECRET'),
-            ],
-        ]);
-        $s3->getObject([
-            'Bucket' => getenv('AWS_BUCKET'),
-            'Key'    => $s3Key,
-            'SaveAs' => $localPath
-        ]);
-    } catch (\Throwable $e) {
-        return $this->xmlError($response, 'Ошибка скачивания файла с S3: ' . $e->getMessage(), 500);
+    // 2. Нормализация пути
+    $realPath = realpath($filePath);
+    if ($realPath === false) {
+        return $this->xmlError($response, 'Файл не найден', 404);
     }
 
-    if (!is_file($localPath) || !is_readable($localPath)) {
-        return $this->xmlError($response, 'Файл не найден или недоступен после скачивания', 500);
+    // 3. ЖЁСТКО разрешённая директория
+    $allowedBase = realpath('/var/www/projects/certificates.kstu.kz/runtime/tmp');
+
+    if (strpos($realPath, $allowedBase) !== 0) {
+        return $this->xmlError($response, 'Доступ к файлу запрещён', 403);
     }
 
-    // 2) Подписываем файл через KalkanCrypt (твой существующий код)
-    $sigFileName = pathinfo($localPath, PATHINFO_FILENAME) . '_signed.pdf';
-    $sigPath = $saveDir . '/' . $sigFileName;
+    // 4. Проверка существования
+    if (!is_file($realPath)) {
+        return $this->xmlError($response, 'Файл не существует', 404);
+    }
 
+    // 5. Настройки KalkanCrypt
     $containerPath = BASE_PATH . '/utils/' . \Hyperf\Support\env('EDS_NAME');
-    if (!file_exists($containerPath)) return $this->xmlError($response, 'Контейнер .p12 не найден', 500);
-    $password = \Hyperf\Support\env('EDS_PASS', '');
-    if ($password === '') return $this->xmlError($response, 'Не задан пароль к контейнеру', 500);
+    if (!file_exists($containerPath)) {
+        return $this->xmlError($response, 'Контейнер .p12 не найден', 500);
+    }
 
-    require_once BASE_PATH . '/utils/kalkan_flags_constants.php';
+    $password = \Hyperf\Support\env('EDS_PASS', '');
+    if ($password === '') {
+        return $this->xmlError($response, 'Не задан пароль EDS_PASS', 500);
+    }
+
+    require BASE_PATH . '/utils/kalkan_flags_constants.php';
+
     try {
         KalkanCrypt_Init();
-        KalkanCrypt_TSASetURL("http://tsp.pki.gov.kz");
-        $err = KalkanCrypt_LoadKeyStore($KCST_PKCS12, $password, $containerPath, "");
-        if ($err > 0) throw new \Exception(KalkanCrypt_GetLastErrorString());
-        $outSign = "";
-        $flags_sign = $KC_SIGN_CMS + $KC_IN_FILE + $KC_OUT_BASE64 + $KC_WITH_TIMESTAMP;
-        $err = KalkanCrypt_SignData("", $flags_sign, $localPath, $outSign);
-        if ($err > 0) throw new \Exception(KalkanCrypt_GetLastErrorString());
-        file_put_contents($sigPath, base64_decode($outSign));
-        KalkanCrypt_Finalize();
+        KalkanCrypt_TSASetURL('http://tsp.pki.gov.kz');
     } catch (\Throwable $e) {
-        KalkanCrypt_Finalize();
-        return $this->xmlError($response, 'Ошибка при подписании: ' . $e->getMessage(), 500);
+        return $this->xmlError($response, 'Ошибка инициализации KalkanCrypt', 500);
     }
 
-    // 3) Отдаем подписанный PDF клиенту
-    return $response->download($sigPath, $sigFileName);
+    $err = KalkanCrypt_LoadKeyStore($KCST_PKCS12, $password, $containerPath, '');
+    if ($err > 0) {
+        $msg = KalkanCrypt_GetLastErrorString();
+        KalkanCrypt_Finalize();
+        return $this->xmlError($response, $msg, 500);
+    }
+
+    // 6. Подписание
+    $outSign = '';
+    $flags = $KC_SIGN_CMS | $KC_IN_FILE | $KC_OUT_BASE64 | $KC_WITH_TIMESTAMP;
+
+    $err = KalkanCrypt_SignData('', $flags, $realPath, $outSign);
+    if ($err > 0) {
+        $msg = KalkanCrypt_GetLastErrorString();
+        KalkanCrypt_Finalize();
+        return $this->xmlError($response, $msg, 500);
+    }
+
+    $signedName = pathinfo($realPath, PATHINFO_FILENAME) . '_signed.pdf';
+    $signedPath = $savePath . '/' . $signedName;
+
+    file_put_contents($signedPath, base64_decode($outSign));
+
+    KalkanCrypt_Finalize();
+
+    return $response->download($signedPath, $signedName);
 }
+
+
 
 
     public function signAsPerson(RequestInterface $request, ResponseInterface $response) {
